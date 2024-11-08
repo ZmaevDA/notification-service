@@ -1,0 +1,99 @@
+server:
+  port: 8082
+  servlet:
+    context-path: /api
+spring:
+  application:
+    name: notification-service
+    version: 0.0.1
+  security:
+    oauth2:
+      client:
+        registration:
+          keycloak:
+            client-id: backend
+            client-secret: a5cvZBRdDGHHR6wN1vgFEV3DPktLmCbL
+            scope: openid, profile
+            authorization-grant-type: authorization_code
+        provider:
+          keycloak:
+            issuer-uri: http://localhost:8282/realms/support
+            jwk-set-uri: http://localhost:8282/realms/support/protocol/openid-connect/certs
+            user-name-attribute: preferred_username
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8282/realms/support
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/support-db
+    username: admin
+    password: admin
+    hikari:
+      schema: notification
+
+  flyway:
+    enabled: true
+    schemas: notification
+    default-schema: notification
+    locations: classpath:db/migration
+
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: admin
+    password: admin
+    virtual-host: cpp
+
+    listener:
+      simple:
+        retry:
+          enabled: true
+          initial-interval: 3000
+          max-attempts: 3
+
+    template:
+      exchange:
+        name: build_notifications
+        type: direct
+        durable: true
+        auto-delete: false
+      queue:
+        name: build_queue
+        durable: true
+        exclusive: false
+        auto-delete: false
+      binding:
+        routing-key: build_notifications_key
+
+  mail:
+    port: 465
+    default-encoding: utf-8
+    host: smtp.gmail.com
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    subject: A new release!
+    domain: noreply@yourdomain.com
+    release-link: https://example.com/new-release
+    unsubscribe-link: https://example.com/new-release
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          ssl:
+            enable: true
+
+secret-key: 123
+oAuth_security_schema: my_oAuth_security_schema
+keycloak-auth-redirect: http://localhost:8282/realms/support/protocol/openid-connect/auth
+service-url: http://localhost:8080/api/
+
+keycloak:
+  auth-server-url: http://localhost:8282/auth
+  server-url: http://localhost:8282
+  realm: support
+  resource: backend
+  username: admin
+  password: admin
+  client-secret: a5cvZBRdDGHHR6wN1vgFEV3DPktLmCbL
